@@ -1,0 +1,48 @@
+services:
+  app:
+    build:
+      context: .
+      target: development
+    container_name: crystallsx_app
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - next_cache:/app/.next
+    environment:
+      - DATABASE_URL=postgresql://crystallsx:crystallsx_pass@db:5432/crystallsx
+      - NEXTAUTH_SECRET=crystallsx_super_secret_key_change_in_production
+      - NEXTAUTH_URL=http://localhost:3000
+      - NODE_ENV=development
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=us-east-1
+      - AWS_S3_BUCKET=crystallsx-bucket
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: crystallsx_db
+    environment:
+      POSTGRES_USER: crystallsx
+      POSTGRES_PASSWORD: crystallsx_pass
+      POSTGRES_DB: crystallsx
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crystallsx -d crystallsx"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  node_modules:
+  next_cache:
